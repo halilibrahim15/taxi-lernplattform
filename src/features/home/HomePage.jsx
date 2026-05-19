@@ -3,6 +3,16 @@ import { supabase } from '../../lib/supabase/client'
 
 function HomePage({ user }) {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600)
+
+useEffect(() => {
+  function handleResize() {
+    setIsMobile(window.innerWidth <= 600)
+  }
+
+  window.addEventListener('resize', handleResize)
+  return () => window.removeEventListener('resize', handleResize)
+}, [])
 
   const [routes, setRoutes] = useState([])
   const [routesLoading, setRoutesLoading] = useState(true)
@@ -104,46 +114,41 @@ const visibleRoutes = sortedRoutes.slice(
     return { from, to }
   }
 
-  function parseBulkRoutes(text) {
-    const lines = text.split('\n').map((line) => line.trim()).filter(Boolean)
-    const parsed = []
+function parseBulkRoutes(text) {
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
 
-    for (const line of lines) {
-      const parts = line.split('|').map((part) => part.trim())
+  const parsed = []
 
-      if (parts.length !== 4 && parts.length !== 5) {
-        throw new Error('Falsches Format. Beispiel: 1 | START | ZIEL | Straßen oder 1 | Bezirk | START | ZIEL | Straßen')
-      }
+  for (const line of lines) {
+    const parts = line.split('|').map((p) => p.trim())
 
-      const routeNumber = Number(parts[0])
-      if (!routeNumber) throw new Error('Mindestens eine Routennummer ist ungültig.')
-
-      const row =
-        parts.length === 5
-          ? {
-              route_number: routeNumber,
-              district: parts[1],
-              start_name: parts[2],
-              destination_name: parts[3],
-              streets_text: parts[4],
-            }
-          : {
-              route_number: routeNumber,
-              district: '',
-              start_name: parts[1],
-              destination_name: parts[2],
-              streets_text: parts[3],
-            }
-
-      if (!row.start_name || !row.destination_name || !row.streets_text) {
-        throw new Error('Mindestens eine Zeile ist unvollständig.')
-      }
-
-      parsed.push(row)
+    if (parts.length !== 6) {
+      throw new Error(
+        'Format: ROUTE | OFFIZIELLE NUMMER | BEZIRK | START | ZIEL | STRASSEN'
+      )
     }
 
-    return parsed
+    const route_number = Number(parts[0])
+
+    if (!route_number) {
+      throw new Error('Ungültige Routennummer.')
+    }
+
+    parsed.push({
+      route_number,
+      official_number: parts[1],
+      district: parts[2],
+      start_name: parts[3],
+      destination_name: parts[4],
+      streets_text: parts[5],
+    })
   }
+
+  return parsed
+}
 
   async function handleBulkSaveRoutes() {
     setRouteMessage('')
@@ -637,7 +642,30 @@ const visibleRoutes = sortedRoutes.slice(
                   </div>
                 ) : (
                   <>
-                    <div style={mutedSmallTextStyle}>Route {route.route_number}</div>
+                    <div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
+  }}
+>
+  <div style={mutedSmallTextStyle}>
+    Route {route.route_number}
+  </div>
+
+  {route.official_number && (
+    <div
+      style={{
+        fontSize: '12px',
+        color: '#64748b',
+        fontWeight: '600'
+      }}
+    >
+      {route.official_number}
+    </div>
+  )}
+</div>
                     {route.district && <div style={districtStyle}>{route.district}</div>}
                     <div style={routeTitleStyle}>{route.start_name} → {route.destination_name}</div>
 
@@ -1075,18 +1103,14 @@ function tabStyle(active) {
     color: active ? '#ffffff' : '#111827',
     border: active ? '1px solid #2563eb' : '1px solid #dbe3ef',
     borderRadius: '12px',
-    padding: '10px 10px',
-    fontSize: '13px',
+    padding: '9px 10px',
+    fontSize: '12px',
     fontWeight: '700',
     cursor: 'pointer',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
-    minHeight: '44px',
-    boxShadow: active
-      ? '0 6px 14px rgba(37, 99, 235, 0.15)'
-      : '0 3px 10px rgba(15, 23, 42, 0.04)',
   }
 }
 
@@ -1142,19 +1166,18 @@ const appShellStyle = {
 }
 
 const navStyle = {
-  display: 'flex',
-  gap: '12px',
-  flexWrap: 'wrap',
-  marginBottom: '22px',
-  alignItems: 'center',
+  display: 'grid',
+  gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+  gap: isMobile ? '8px' : '12px',
+  marginBottom: isMobile ? '14px' : '22px',
 }
 
 const heroCardStyle = {
   backgroundColor: '#ffffff',
   borderRadius: '14px',
-  padding: '10px',
-  boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
-  marginBottom: '16px',
+  padding: '12px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+  marginBottom: '12px',
 }
 
 const heroTopRowStyle = {
@@ -1252,13 +1275,13 @@ const statGridStyle = {
 
 const dashboardStatCardStyle = {
   backgroundColor: '#ffffff',
-  border: '1px solid #e5e7eb',
-  borderRadius: '18px',
-  padding: '12px',
-  minHeight: '72px',
+  borderRadius: '14px',
+  padding: '10px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
   display: 'flex',
   alignItems: 'center',
   gap: '10px',
+  minHeight: '70px',
 }
 
 const dashboardIconStyle = {
@@ -1295,9 +1318,9 @@ const dashboardStatTextStyle = {
 
 const panelStyle = {
   backgroundColor: '#ffffff',
-  borderRadius: '18px',
-  padding: '16px',
-  boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
+  borderRadius: '14px',
+  padding: '12px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
 }
 
 const sectionHeaderStyle = {
@@ -1310,7 +1333,7 @@ const sectionHeaderStyle = {
 
 const sectionTitleStyle = {
   margin: '0 0 6px 0',
-  fontSize: '22px',
+  fontSize: '18px',
   color: '#0f172a',
 }
 
@@ -1485,22 +1508,22 @@ const districtStyle = {
 }
 
 const routeTitleStyle = {
-  fontSize: '16px',
+  fontSize: '15px',
   fontWeight: 'bold',
   color: '#0f172a',
-  marginBottom: '10px',
-  lineHeight: '1.35',
+  marginBottom: '8px',
+  lineHeight: '1.3',
 }
 
 const answerBoxStyle = {
   backgroundColor: '#f8fafc',
   border: '1px solid #e5e7eb',
-  borderRadius: '12px',
-  padding: '12px',
+  borderRadius: '10px',
+  padding: '10px',
   color: '#334155',
-  lineHeight: '1.55',
-  marginBottom: '10px',
-  fontSize: '13px',
+  lineHeight: '1.45',
+  marginBottom: '8px',
+  fontSize: '12px',
 }
 
 const learnItemStyle = {
