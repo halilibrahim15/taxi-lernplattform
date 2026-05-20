@@ -664,17 +664,7 @@ function parseBulkRoutes(text) {
   )}
 </div>
 
-  {route.official_number && (
-    <div
-      style={{
-        fontSize: '12px',
-        color: '#64748b',
-        fontWeight: '600'
-      }}
-    >
-      {route.official_number}
-    </div>
-  )}
+
 </div>
                     {route.district && <div style={districtStyle}>{route.district}</div>}
                     <div style={routeTitleStyle}>{route.start_name} → {route.destination_name}</div>
