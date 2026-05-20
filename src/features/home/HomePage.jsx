@@ -22,6 +22,7 @@ useEffect(() => {
   const [learnMode, setLearnMode] = useState('reveal')
 const [routesPerPage, setRoutesPerPage] = useState('10')
 const [routesPage, setRoutesPage] = useState(1)
+const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
   const [openRoutes, setOpenRoutes] = useState({})
   const [routeMenuId, setRouteMenuId] = useState(null)
   const [editingRouteId, setEditingRouteId] = useState(null)
@@ -103,7 +104,11 @@ const [routesPage, setRoutesPage] = useState(1)
 const routesPerPageNumber = Number(routesPerPage) || 10
 const totalRoutePages = Math.max(1, Math.ceil(sortedRoutes.length / routesPerPageNumber))
 
-const visibleRoutes = sortedRoutes.slice(
+const filteredRoutes = showOnlyFavorites
+  ? sortedRoutes.filter((route) => route.is_favorite)
+  : sortedRoutes
+
+const visibleRoutes = filteredRoutes.slice(
   (routesPage - 1) * routesPerPageNumber,
   routesPage * routesPerPageNumber
 )
@@ -278,7 +283,27 @@ function parseBulkRoutes(text) {
   function toggleRoute(id) {
     setOpenRoutes((prev) => ({ ...prev, [id]: !prev[id] }))
   }
+async function toggleFavorite(route) {
+  const nextValue = !route.is_favorite
 
+  const { error } = await supabase
+    .from('routes')
+    .update({ is_favorite: nextValue })
+    .eq('id', route.id)
+
+  if (error) {
+    setRouteMessage('Favorit konnte nicht gespeichert werden.')
+    return
+  }
+
+  setRoutes((current) =>
+    current.map((item) =>
+      item.id === route.id
+        ? { ...item, is_favorite: nextValue }
+        : item
+    )
+  )
+}
   function toggleQuestion(id) {
     setOpenQuestions((prev) => ({ ...prev, [id]: !prev[id] }))
   }
@@ -591,6 +616,20 @@ function parseBulkRoutes(text) {
           <div style={{ ...subTabRowStyle, marginTop: '14px' }}>
             <button onClick={() => setLearnMode('full')} style={subTabStyle(learnMode === 'full')}>Alles sichtbar</button>
             <button onClick={() => setLearnMode('reveal')} style={subTabStyle(learnMode === 'reveal')}>Aufklappbar</button>
+            <button
+  onClick={() => setShowOnlyFavorites((prev) => !prev)}
+  style={{
+    padding: '10px 14px',
+    borderRadius: '12px',
+    border: showOnlyFavorites ? '1px solid #f59e0b' : '1px solid #cbd5e1',
+    backgroundColor: showOnlyFavorites ? '#fef3c7' : '#ffffff',
+    color: showOnlyFavorites ? '#b45309' : '#475569',
+    fontWeight: '700',
+    cursor: 'pointer'
+  }}
+>
+  ★ Nur markierte
+</button>
           </div>
           <div
   style={{
@@ -669,6 +708,28 @@ function parseBulkRoutes(text) {
 </div>
                     {route.district && <div style={districtStyle}>{route.district}</div>}
                     <div style={routeTitleStyle}>{route.start_name} → {route.destination_name}</div>
+
+<button
+  onClick={() => toggleFavorite(route)}
+  style={{
+    position: 'absolute',
+    top: '14px',
+    right: '58px',
+    width: '34px',
+    height: '34px',
+    borderRadius: '12px',
+    border: '1px solid #fde68a',
+    backgroundColor: '#ffffff',
+    color: route.is_favorite ? '#f59e0b' : '#94a3b8',
+    fontSize: '18px',
+    fontWeight: '800',
+    cursor: 'pointer',
+    lineHeight: '1'
+  }}
+>
+  ★
+</button>
+
 <button
   onClick={() => setRouteMenuId(routeMenuId === route.id ? null : route.id)}
   style={{
@@ -1598,7 +1659,7 @@ const answerBoxStyle = {
   color: '#334155',
   lineHeight: '1.45',
   marginBottom: '8px',
-  fontSize: '12px',
+  fontSize: '14px',
 }
 
 const learnItemStyle = {
