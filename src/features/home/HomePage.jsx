@@ -1167,9 +1167,9 @@ const appShellStyle = {
 
 const navStyle = {
   display: 'grid',
-  gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-  gap: isMobile ? '8px' : '12px',
-  marginBottom: isMobile ? '14px' : '22px',
+gridTemplateColumns: 'repeat(4, 1fr)',
+gap: '12px',
+marginBottom: '22px',
 }
 
 const heroCardStyle = {
