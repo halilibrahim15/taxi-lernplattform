@@ -23,6 +23,7 @@ useEffect(() => {
 const [routesPerPage, setRoutesPerPage] = useState('10')
 const [routesPage, setRoutesPage] = useState(1)
   const [openRoutes, setOpenRoutes] = useState({})
+  const [routeMenuId, setRouteMenuId] = useState(null)
   const [editingRouteId, setEditingRouteId] = useState(null)
   const [editText, setEditText] = useState('')
 
@@ -630,7 +631,7 @@ function parseBulkRoutes(text) {
         ) : (
           <div style={{ display: 'grid', gap: '14px' }}>
             {visibleRoutes.map((route) => (
-              <div key={route.id} style={panelStyle}>
+              <div key={route.id} style={{ ...panelStyle, position: 'relative' }}>
                 {editingRouteId === route.id ? (
                   <div>
                     <div style={editTitleStyle}>Route bearbeiten</div>
@@ -655,7 +656,7 @@ function parseBulkRoutes(text) {
   {route.official_number && (
     <span style={{
       marginLeft: '10px',
-      fontSize: '18px',
+      fontSize: '14px',
       color: '#64748b',
       fontWeight: '700'
     }}>
@@ -668,6 +669,83 @@ function parseBulkRoutes(text) {
 </div>
                     {route.district && <div style={districtStyle}>{route.district}</div>}
                     <div style={routeTitleStyle}>{route.start_name} → {route.destination_name}</div>
+<button
+  onClick={() => setRouteMenuId(routeMenuId === route.id ? null : route.id)}
+  style={{
+    position: 'absolute',
+    top: '14px',
+    right: '14px',
+    width: '34px',
+    height: '34px',
+    borderRadius: '12px',
+    border: '1px solid #bfdbfe',
+    backgroundColor: '#ffffff',
+    color: '#475569',
+    fontSize: '20px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    lineHeight: '1'
+  }}
+>
+  ⋮
+</button>
+
+{routeMenuId === route.id && (
+  <div
+    style={{
+      position: 'absolute',
+      top: '54px',
+      right: '14px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #e5e7eb',
+      borderRadius: '14px',
+      boxShadow: '0 12px 28px rgba(15,23,42,0.14)',
+      padding: '8px',
+      zIndex: 20,
+      minWidth: '150px'
+    }}
+  >
+    <button
+      onClick={() => {
+        setRouteMenuId(null)
+        startEdit(route)
+      }}
+      style={{
+        width: '100%',
+        border: 'none',
+        background: 'transparent',
+        color: '#2563eb',
+        fontWeight: '700',
+        fontSize: '14px',
+        padding: '10px',
+        textAlign: 'left',
+        cursor: 'pointer'
+      }}
+    >
+      ✏️ Bearbeiten
+    </button>
+
+    <button
+      onClick={() => {
+        setRouteMenuId(null)
+        deleteRoute(route.id)
+      }}
+      style={{
+        width: '100%',
+        border: 'none',
+        background: 'transparent',
+        color: '#dc2626',
+        fontWeight: '700',
+        fontSize: '14px',
+        padding: '10px',
+        textAlign: 'left',
+        cursor: 'pointer'
+      }}
+    >
+      🗑️ Löschen
+    </button>
+  </div>
+)}
 
                     {learnMode === 'full' ? (
                       <div style={answerBoxStyle}>{route.streets_text}</div>
@@ -680,10 +758,7 @@ function parseBulkRoutes(text) {
                       </>
                     )}
 
-                    <div style={subTabRowStyle}>
-                      <button onClick={() => startEdit(route)} style={neutralBlueButtonStyle}>Bearbeiten</button>
-                      <button onClick={() => deleteRoute(route.id)} style={dangerButtonStyle}>Löschen</button>
-                    </div>
+
                   </>
                 )}
               </div>
