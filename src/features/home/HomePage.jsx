@@ -650,9 +650,19 @@ function parseBulkRoutes(text) {
     flexWrap: 'wrap'
   }}
 >
-  <div style={mutedSmallTextStyle}>
-    Route {route.route_number}
-  </div>
+<div style={mutedSmallTextStyle}>
+  Route {route.route_number}
+  {route.official_number && (
+    <span style={{
+      marginLeft: '10px',
+      fontSize: '18px',
+      color: '#64748b',
+      fontWeight: '700'
+    }}>
+      #{route.official_number}
+    </span>
+  )}
+</div>
 
   {route.official_number && (
     <div
