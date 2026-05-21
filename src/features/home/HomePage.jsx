@@ -189,23 +189,35 @@ function parseBulkRoutes(text) {
     setEditText(text)
   }
 
-  async function saveEdit(id) {
-    try {
-      const row = parseBulkRoutes(editText)[0]
-      const { error } = await supabase.from('routes').update(row).eq('id', id)
+async function saveEdit(id) {
+  try {
+    const row = parseBulkRoutes(editText)[0]
 
-      if (error) {
-        setRouteMessage('Bearbeiten fehlgeschlagen: ' + error.message)
-      } else {
-        setEditingRouteId(null)
-        setEditText('')
-        setRouteMessage('Route erfolgreich bearbeitet.')
-        loadRoutes()
-      }
-    } catch (error) {
-      setRouteMessage(error.message)
+    const { error } = await supabase
+      .from('routes')
+      .update({
+        route_number: row.route_number,
+        official_number: row.official_number,
+        district: row.district,
+        start_name: row.start_name,
+        destination_name: row.destination_name,
+        streets_text: row.streets_text,
+      })
+      .eq('id', id)
+
+    if (error) {
+      setRouteMessage('Bearbeiten fehlgeschlagen: ' + error.message)
+      return
     }
+
+    setEditingRouteId(null)
+    setEditText('')
+    setRouteMessage('Route erfolgreich bearbeitet.')
+    loadRoutes()
+  } catch (error) {
+    setRouteMessage('Bearbeiten fehlgeschlagen: ' + error.message)
   }
+}
 
   function cancelEdit() {
     setEditingRouteId(null)
