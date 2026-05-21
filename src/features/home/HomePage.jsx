@@ -180,14 +180,12 @@ function parseBulkRoutes(text) {
     }
   }
 
-  function startEdit(route) {
-    const text = route.district
-      ? `${route.route_number} | ${route.district} | ${route.start_name} | ${route.destination_name} | ${route.streets_text}`
-      : `${route.route_number} | ${route.start_name} | ${route.destination_name} | ${route.streets_text}`
+function startEdit(route) {
+  const text = `${route.route_number} | ${route.official_number || ''} | ${route.district} | ${route.start_name} | ${route.destination_name} | ${route.streets_text}`
 
-    setEditingRouteId(route.id)
-    setEditText(text)
-  }
+  setEditingRouteId(route.id)
+  setEditText(text)
+}
 
 async function saveEdit(id) {
   try {
