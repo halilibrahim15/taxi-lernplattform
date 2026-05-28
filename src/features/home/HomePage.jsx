@@ -368,29 +368,76 @@ async function toggleFavorite(route) {
     return result === correctRoute.streets_text ? otherStreets.reverse().join(' > ') : result
   }
 
-  function buildAnswerOptions(route, allRoutes, questionIndex) {
-    const correct = String(route.streets_text || '').trim()
-    const wrongs = []
-    let attempt = 0
+function buildAnswerOptions(route, allRoutes, questionIndex) {
+  const correct = String(route.streets_text || '').trim()
+  const streets = splitStreets(correct)
 
-    while (wrongs.length < 3 && attempt < 40) {
-      const wrong = buildWrongAnswer(route, allRoutes, questionIndex + attempt, wrongs.length)
-      if (wrong && wrong !== correct && !wrongs.includes(wrong)) wrongs.push(wrong)
-      attempt += 1
+  const wrongs = [
+    buildMiddleMissingAnswer(streets),
+    buildMiddleSwappedAnswer(streets),
+    buildMiddleReplacedAnswer(streets, allRoutes, route.id),
+  ].filter(Boolean)
+
+  while (wrongs.length < 3) {
+    const extra = buildMiddleSwappedAnswer(streets)
+    if (extra && !wrongs.includes(extra) && extra !== correct) {
+      wrongs.push(extra)
+    } else {
+      wrongs.push(`Alternative ${wrongs.length + 1}`)
     }
-
-    while (wrongs.length < 3) {
-      const shuffled = shuffleArray(splitStreets(correct)).join(' > ')
-      wrongs.push(shuffled || `Alternative ${wrongs.length + 1}`)
-    }
-
-    return shuffleArray([
-      { text: correct, isCorrect: true },
-      { text: wrongs[0], isCorrect: false },
-      { text: wrongs[1], isCorrect: false },
-      { text: wrongs[2], isCorrect: false },
-    ])
   }
+
+  return shuffleArray([
+    { text: correct, isCorrect: true },
+    { text: wrongs[0], isCorrect: false },
+    { text: wrongs[1], isCorrect: false },
+    { text: wrongs[2], isCorrect: false },
+  ])
+}
+
+function buildMiddleMissingAnswer(streets) {
+  if (streets.length < 4) return null
+
+  const copy = [...streets]
+  const index = Math.floor(copy.length / 2)
+  copy.splice(index, 1)
+
+  return copy.join(' > ')
+}
+
+function buildMiddleSwappedAnswer(streets) {
+  if (streets.length < 5) return null
+
+  const copy = [...streets]
+  const index = Math.max(1, Math.floor(copy.length / 2) - 1)
+
+  const temp = copy[index]
+  copy[index] = copy[index + 1]
+  copy[index + 1] = temp
+
+  return copy.join(' > ')
+}
+
+function buildMiddleReplacedAnswer(streets, allRoutes, currentId) {
+  if (streets.length < 5) return null
+
+  const otherStreets = allRoutes
+    .filter((route) => route.id !== currentId)
+    .flatMap((route) => splitStreets(route.streets_text))
+    .filter(Boolean)
+
+  if (otherStreets.length === 0) return null
+
+  const copy = [...streets]
+  const index = Math.floor(copy.length / 2)
+  const replacement = otherStreets[index % otherStreets.length]
+
+  if (!replacement || replacement === copy[index]) return null
+
+  copy[index] = replacement
+
+  return copy.join(' > ')
+}
 
   function startRouteExam() {
     setExamMessage('')
